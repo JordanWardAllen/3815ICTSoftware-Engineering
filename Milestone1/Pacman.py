@@ -25,27 +25,49 @@ class Player(pygame.sprite.Sprite):
     def drawPlayer(self):
         self.player = screen.blit(self.playerImg, (self.playerX, self.playerY))
 
+
+
     def playerMove(self):
         vel = 1
         move_ticker = 0
+        leftKey = True
+        rightKey = True
+        upKey = True
+        downKey = True
+
+        if len(isColliding) > 0:
+            if isColliding[0] == "up":
+                upKey = False
+            elif isColliding[0] == "down":
+                downKey = False
+            elif isColliding[0] == 'left':
+                leftKey = False
+            elif isColliding[0] == 'right':
+                rightKey == False
+        else:
+            leftKey = True
+            rightKey = True
+            upKey = True
+            downKey = True
+
 
         if move_ticker > 0:
             move_ticker -= 1
-        if keys[K_LEFT]:
+        if keys[K_LEFT] and leftKey == True:
             if move_ticker == 0:
                 move_ticker = 5
                 self.playerX -= vel
 
-        if keys[K_RIGHT]:
+        if keys[K_RIGHT] and rightKey == True:
             if move_ticker == 0:
                 move_ticker = 5
                 self.playerX += vel
 
-        if keys[K_DOWN]:
+        if keys[K_DOWN] and downKey == True:
             if move_ticker == 0:
                 move_ticker = 5
                 self.playerY += vel
-        if keys[K_UP]:
+        if keys[K_UP] and upKey == True:
             if move_ticker == 0:
                 move_ticker = 5
                 self.playerY -= vel
@@ -62,7 +84,6 @@ class Wall(pygame.sprite.Sprite):
         self.wallHeight = wallHeight
         self.wallWidth = wallWidth
         self.wall = pygame.draw.rect(screen, self.wallColour, (self.wallX, self.wallY, self.wallHeight, self.wallWidth))
-
 
 
 
@@ -89,7 +110,7 @@ vel = 2
 
 
 
-def imageFunc(playerX, playerY):
+def imageFunc():
     screen.blit(backgroundImg, (0, 80))
     screen.blit(header, (0, 0))
 
@@ -102,59 +123,46 @@ header = pygame.image.load("header.png")
 screen.blit(background,(0,0))
 
 player = Player(50, 50)
-
-
-# Run until the user asks to quit
 running = True
+isColliding = []
+
 
 while running:
     keys = pygame.key.get_pressed()
-    hit = False
-
     # Did the user click the window close button?
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # if move_ticker > 0:
-    #     move_ticker -= 1
-    # if keys[K_LEFT]:
-    #     if move_ticker == 0:
-    #         move_ticker = 5
-    #         player.playerX -= -2
-    #
-    # if keys[K_RIGHT]:
-    #     if move_ticker == 0:
-    #         move_ticker = 5
-    #         playerX += vel
-    #
-    # if keys[K_DOWN]:
-    #     if move_ticker == 0:
-    #         move_ticker = 5
-    #         playerY += vel
-    # if keys[K_UP]:
-    #     if move_ticker == 0:
-    #         move_ticker = 5
-    #         playerY -= vel
 
 
     screen.fill((0,0,0))
-    #funky implementation
+    imageFunc()
     wall1 = Wall(0,0, 600, 20)
     wall2 = Wall(0, 640, 600, 20)
     wall3 = Wall(0, 0, 20, 660)
     wall4 = Wall(580, 0, 20, 660)
 
 
-
     player.drawPlayer()
     player.playerMove()
-    print(player.playerX, player.playerY)
+
+    pressed_keys = pygame.key.get_pressed()
+    for key_constant, pressed in enumerate(pressed_keys):
+        if pressed:
+            if player.player.colliderect(wall1.wall) or player.player.colliderect(
+                    wall2.wall) or player.player.colliderect(wall3.wall) or player.player.colliderect(wall4.wall):
+                if len(isColliding) == 0:
+                    isColliding.append(pygame.key.name(key_constant))
+                    #key_name = pygame.key.name(key_constant)
+
+                # print('worked')
+                # print(player.player.colliderect(wall1.wall))
+                # print(key_name)
+            else:
+                isColliding.clear()
 
 
-    if player.player.colliderect(wall1.wall) or player.player.colliderect(wall2.wall) or player.player.colliderect(wall3.wall) or player.player.colliderect(wall4.wall):
-        hit = True
-        print(hit)
 
 
     # clock.tick(60)
