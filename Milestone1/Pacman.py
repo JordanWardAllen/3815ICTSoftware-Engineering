@@ -1,16 +1,7 @@
 import pygame
 import os
-os.environ["SDL_VIDEO_CENTERED"] = "1"
 
-from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
+os.environ["SDL_VIDEO_CENTERED"] = "1"
 
 
 class Player(pygame.sprite.Sprite):
@@ -19,7 +10,7 @@ class Player(pygame.sprite.Sprite):
         # super().__init__()
         pygame.sprite.Sprite.__init__(self)
         self.playerImg = pygame.image.load("player.png")
-        self.playerImg = pygame.transform.scale(self.playerImg, (25, 25))
+        self.playerImg = pygame.transform.scale(self.playerImg, (27, 27))
         self.playerX = playerX
         self.playerY = playerY
         self.rect = self.playerImg.get_rect()
@@ -29,54 +20,44 @@ class Player(pygame.sprite.Sprite):
 
 
 
-    def playerMove(self):
-        vel = 3
-        move_ticker = 0
+    def playerMove(self, lastKey,collidedKey):
+        vel = 1
         leftKey = True
         rightKey = True
         upKey = True
         downKey = True
 
-        if len(isColliding) > 0:
-            if isColliding[0] == "up":
-                upKey = False
-            elif isColliding[0] == "down":
-                downKey = False
-            elif isColliding[0] == 'left':
-                leftKey = False
-            elif isColliding[0] == 'right':
-                rightKey = False
+
+        if collidedKey == "up":
+            upKey = False
+        elif collidedKey == "down":
+            downKey = False
+        elif collidedKey == "left":
+            leftKey = False
+        elif collidedKey == "right":
+            rightKey = False
         else:
             leftKey = True
             rightKey = True
             upKey = True
             downKey = True
 
+        if lastKey == "up" and upKey:
+            self.playerY -= vel
+        elif lastKey == "down" and downKey:
+            self.playerY += vel
+        elif lastKey == 'left' and leftKey:
+            self.playerX -= vel
+        elif lastKey == 'right' and rightKey:
+            self.playerX += vel
 
-        if move_ticker > 0:
-            move_ticker -= 1
-        if keys[K_LEFT] and leftKey == True:
-            if move_ticker == 0:
-                move_ticker = 5
-                self.playerX -= vel
-
-        if keys[K_RIGHT] and rightKey == True:
-            if move_ticker == 0:
-                move_ticker = 5
-                self.playerX += vel
-
-        if keys[K_DOWN] and downKey == True:
-            if move_ticker == 0:
-                move_ticker = 5
-                self.playerY += vel
-        if keys[K_UP] and upKey == True:
-            if move_ticker == 0:
-                move_ticker = 5
-                self.playerY -= vel
-
-
-
-
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, enemyX, enemyY, status):
+        super().__init__()
+        self.enemyX = enemyX
+        self.enemyY = enemyY
+        self.status = status
+        self.rect = pygame.draw.rect(screen, (255,0,0), (self.enemyX, self.enemyY, 27, 27))
 
 class Wall(pygame.sprite.Sprite):
     def __init__(self, wallX,wallY, wallHeight, wallWidth):
@@ -91,19 +72,14 @@ class Wall(pygame.sprite.Sprite):
 
 
 pygame.init()
-
 displayWindow = (600, 660)
-
-
 
 # Set up the drawing window
 screen = pygame.display.set_mode(displayWindow)
 background = pygame.Surface(displayWindow)
 pygame.display.set_caption("Pac Man")
 move_ticker = 0
-
 clock = pygame.time.Clock()
-
 
 
 
@@ -115,12 +91,36 @@ def imageFunc():
 backgroundImg = pygame.image.load("colourmap.png")
 header = pygame.image.load("header.png")
 screen.blit(background,(0,0))
-player = Player(20, 150)
+player = Player(17, 150)
+
 
 playerGroup = pygame.sprite.Group()
 blockedGroup = pygame.sprite.Group()
 running = True
-isColliding = []
+lastPressedList = ['']
+collidedKey = ''
+
+# Score
+score_value = 0
+scoreX = 15
+scoreY = 45
+
+lives_left = 3
+livesX = 450
+livesY = 45
+
+font = pygame.font.Font("freesansbold.ttf", 25)
+
+
+
+def show_score(x,y):
+    score = font.render("Score: " + str(score_value), True, (255,255,255))
+    screen.blit(score, (scoreX, scoreY))
+
+
+def show_lives(x,y):
+    lives = font.render("Lives left: " + str(lives_left), True, (255,255,255))
+    screen.blit(lives, (livesX, livesY))
 
 
 while running:
@@ -132,6 +132,9 @@ while running:
             running = False
 
     screen.fill((0,0,0))
+
+
+
     wall1 = Wall(0, 80, 600, 10)
     wall2 = Wall(0, 650, 600, 10)
     wall3 = Wall(0, 0, 10, 660)
@@ -166,29 +169,38 @@ while running:
     wall32 = Wall(190, 270, 60, 20)
     wall33 = Wall(350, 270, 60, 20)
     imageFunc()
-
-
+    show_score(scoreX, scoreY)
+    show_lives(livesX, livesY)
     player.drawPlayer()
-    player.playerMove()
+    enemy1 = Enemy(150, 175, "hunter")
+    enemy2 = Enemy(350, 475, "hunter")
+
     pressed_keys = pygame.key.get_pressed()
-
-
     for key_constant, pressed in enumerate(pressed_keys):
         if pressed:
-            if player.player.colliderect(wall1) or player.player.colliderect(
-                    wall2) or player.player.colliderect(wall3) or player.player.colliderect(wall4) or player.player.colliderect(wall5):
-                print(isColliding)
-                print("collided")
-                if len(isColliding) == 0:
-                    isColliding.append(pygame.key.name(key_constant))
-                    key_name = pygame.key.name(key_constant)
-                if len(isColliding) == 0:
-                    isColliding.append(pygame.key.name(key_constant))
-                    key_name = pygame.key.name(key_constant)
+            lastPressedList.clear()
+            lastPressedList.append(pygame.key.name(key_constant))
 
-            else:
-                isColliding.clear()
+        # Asbolutely hideous implementation of walls due to spirteGroups not working correctly for the prototpye
+        if player.player.colliderect(wall1) or player.player.colliderect(wall2) or player.player.colliderect(wall3) or player.player.colliderect(wall4) or player.player.colliderect(wall5) or player.player.colliderect(wall6) or player.player.colliderect(wall7) or player.player.colliderect(wall8) or player.player.colliderect(wall9)\
+                or player.player.colliderect(wall10) or player.player.colliderect(wall11) or player.player.colliderect(wall12) or player.player.colliderect(wall13) or player.player.colliderect(wall14) or player.player.colliderect(wall15) or player.player.colliderect(wall16) or player.player.colliderect(wall17)\
+                or player.player.colliderect(wall18) or player.player.colliderect(wall19) or player.player.colliderect(wall20) or player.player.colliderect(wall21) or player.player.colliderect(wall22) or player.player.colliderect(wall23) or player.player.colliderect(wall24) or player.player.colliderect(wall25) \
+                or player.player.colliderect(wall26) or player.player.colliderect(wall27) or player.player.colliderect(wall28) or player.player.colliderect(wall29) or player.player.colliderect(wall30) or player.player.colliderect(wall31) or player.player.colliderect(wall32) or player.player.colliderect(wall33):
+            if len(collidedKey) <= 0:
+                collidedKey = lastPressedList[0]
+                print(collidedKey)
+        else:
+            collidedKey = ''
+    if player.player.colliderect(enemy1):
+        lives_left -= 1
+        player.playerX = 17
+        player.playery = 150
 
+    if lives_left < 0:
+        #end screen to be displayed
+        pygame.quit()
+
+    player.playerMove(lastPressedList[0], collidedKey)
     # clock.tick(60)
     pygame.display.flip()
 
